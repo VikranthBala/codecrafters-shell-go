@@ -30,6 +30,13 @@ func main() {
 			os.Exit(stsCode)
 		case "echo":
 			fmt.Println(strings.Join(inpArgs[1:], " "))
+		case "type":
+			builtInCommands := map[string]bool{"exit": true, "echo": true, "type": true}
+			if builtInCommands[inpArgs[1]] {
+				fmt.Println(inpArgs[1] + " is a shell builtin")
+			} else {
+				fmt.Println(inpArgs[1] + ": not found")
+			}
 		case "":
 			return
 		default:
