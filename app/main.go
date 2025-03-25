@@ -40,6 +40,11 @@ func main() {
 				log.Fatal(err)
 			}
 			fmt.Println(wd)
+		case "cd":
+			err = os.Chdir(inpArgs[1])
+			if err != nil {
+				log.Fatal(err)
+			}
 		case "type":
 			cmd := inpArgs[1]
 			builtInCommands := map[string]bool{"exit": true, "echo": true, "type": true, "pwd": true}
