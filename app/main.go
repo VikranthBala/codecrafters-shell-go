@@ -39,7 +39,7 @@ func main() {
 			if builtInCommands[cmd] {
 				fmt.Println(cmd + " is a shell builtin")
 			} else {
-				pathDirs := strings.Split(os.Getenv("TESTPATH"), ":")
+				pathDirs := strings.Split(os.Getenv("PATH"), ":")
 				var found bool
 				for _, dir := range pathDirs {
 					if _, err = os.Stat(dir + "/" + cmd); err == nil {
