@@ -43,7 +43,7 @@ func main() {
 		case "cd":
 			err = os.Chdir(inpArgs[1])
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println("cd: " + inpArgs[1] + " No such file or directory")
 			}
 		case "type":
 			cmd := inpArgs[1]
