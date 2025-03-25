@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -33,12 +34,12 @@ func main() {
 		case "echo":
 			fmt.Println(strings.Join(inpArgs[1:], " "))
 		case "type":
-			// lookup path env
 			cmd := inpArgs[1]
 			builtInCommands := map[string]bool{"exit": true, "echo": true, "type": true}
 			if builtInCommands[cmd] {
 				fmt.Println(cmd + " is a shell builtin")
 			} else {
+				// This logic can be replaced by using os/exec#LookUpPath method
 				pathDirs := strings.Split(os.Getenv("PATH"), ":")
 				var found bool
 				for _, dir := range pathDirs {
@@ -55,7 +56,16 @@ func main() {
 		case "":
 			return
 		default:
-			fmt.Println(inpArgs[0] + ": command not found")
+			if binPath, err := exec.LookPath(inpArgs[0]); err != nil {
+				fmt.Println(inpArgs[0] + ": command not found")
+			} else {
+				cmd := exec.Command(binPath, inpArgs[1:]...)
+				out, err := cmd.Output()
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println(string(out))
+			}
 		}
 	}
 }
