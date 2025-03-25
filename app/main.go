@@ -5,14 +5,22 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
-	fmt.Fprint(os.Stdout, "$ ")
 
-	command, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
-		log.Fatal(err)
+	for {
+		fmt.Fprint(os.Stdout, "$ ")
+		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+		command = strings.TrimRight(command, "\n")
+		if len(command) == 0 {
+			return
+		}
+		fmt.Println(command + ": command not found")
 	}
-	fmt.Println(command[:len(command)-1] + ": command not found")
+
 }
