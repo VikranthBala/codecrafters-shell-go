@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+// func lookupCommandInPath(cmd string, pathD[])
+
 func main() {
 
 	for {
@@ -31,11 +33,24 @@ func main() {
 		case "echo":
 			fmt.Println(strings.Join(inpArgs[1:], " "))
 		case "type":
+			// lookup path env
+			cmd := inpArgs[1]
 			builtInCommands := map[string]bool{"exit": true, "echo": true, "type": true}
-			if builtInCommands[inpArgs[1]] {
-				fmt.Println(inpArgs[1] + " is a shell builtin")
+			if builtInCommands[cmd] {
+				fmt.Println(cmd + " is a shell builtin")
 			} else {
-				fmt.Println(inpArgs[1] + ": not found")
+				pathDirs := strings.Split(os.Getenv("TESTPATH"), ":")
+				var found bool
+				for _, dir := range pathDirs {
+					if _, err = os.Stat(dir + "/" + cmd); err == nil {
+						found = true
+						fmt.Println(cmd + " is " + dir + "/" + cmd)
+						break
+					}
+				}
+				if !found {
+					fmt.Println(cmd + ": not found")
+				}
 			}
 		case "":
 			return
