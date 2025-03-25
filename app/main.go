@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -17,8 +18,14 @@ func main() {
 			log.Fatal(err)
 		}
 		command = strings.TrimRight(command, "\n")
-		if len(command) == 0 {
-			return
+
+		inpArgs := strings.Fields(command)
+		if inpArgs[0] == "exit" {
+			stsCode, err := strconv.Atoi(inpArgs[1])
+			if err != nil {
+				log.Fatal(err)
+			}
+			os.Exit(stsCode)
 		}
 		fmt.Println(command + ": command not found")
 	}
