@@ -34,9 +34,15 @@ func main() {
 			os.Exit(stsCode)
 		case "echo":
 			fmt.Println(strings.Join(inpArgs[1:], " "))
+		case "pwd":
+			wd, err := os.Getwd()
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(wd)
 		case "type":
 			cmd := inpArgs[1]
-			builtInCommands := map[string]bool{"exit": true, "echo": true, "type": true}
+			builtInCommands := map[string]bool{"exit": true, "echo": true, "type": true, "pwd": true}
 			if builtInCommands[cmd] {
 				fmt.Println(cmd + " is a shell builtin")
 			} else {
