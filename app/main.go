@@ -66,7 +66,7 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				fmt.Println(string(out))
+				fmt.Printf("%s", string(out))
 			}
 		}
 	}
