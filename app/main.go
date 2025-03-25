@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -59,7 +60,8 @@ func main() {
 			if binPath, err := exec.LookPath(inpArgs[0]); err != nil {
 				fmt.Println(inpArgs[0] + ": command not found")
 			} else {
-				cmd := exec.Command(binPath, inpArgs[1:]...)
+				cmd := exec.Command(inpArgs[0], inpArgs...)
+				cmd.Dir = filepath.Dir(binPath)
 				out, err := cmd.Output()
 				if err != nil {
 					log.Fatal(err)
