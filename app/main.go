@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +12,32 @@ import (
 	"strings"
 )
 
-// func lookupCommandInPath(cmd string, pathD[])
+func processInpArgs(inp string) (args []string) {
+	args = make([]string, 0)
+
+	started := false
+	t := ""
+	for _, ele := range strings.Split(inp, " ") {
+		if !started && strings.HasPrefix(ele, `'`) {
+			if strings.HasSuffix(ele, `'`) {
+				args = append(args, strings.Trim(ele, `'`))
+				continue
+			}
+			started = !started
+			t += ele
+		} else if started {
+			t = t + " " + ele
+			if strings.HasSuffix(ele, `'`) {
+				started = !started
+				args = append(args, strings.Trim(t, `'`))
+				t = ""
+			}
+		} else {
+			args = append(args, ele)
+		}
+	}
+	return
+}
 
 func main() {
 
@@ -23,7 +49,7 @@ func main() {
 		}
 		command = strings.TrimRight(command, "\n")
 
-		inpArgs := strings.Split(command, " ")
+		inpArgs := processInpArgs(command)
 
 		switch inpArgs[0] {
 		case "exit":
@@ -81,11 +107,15 @@ func main() {
 			} else {
 				cmd := exec.Command(inpArgs[0], inpArgs[1:]...)
 				cmd.Dir = filepath.Dir(binPath)
-				out, err := cmd.Output()
+				var outbuf, errbuf bytes.Buffer
+				cmd.Stdout = &outbuf
+				cmd.Stderr = &errbuf
+				err := cmd.Run()
 				if err != nil {
+					log.Println("stderr: ", errbuf.String())
 					log.Fatal(err)
 				}
-				fmt.Printf("%s", string(out))
+				fmt.Printf("%s", outbuf.String())
 			}
 		}
 	}
