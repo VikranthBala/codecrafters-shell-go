@@ -15,6 +15,10 @@ import (
 func processInpArgs(inp string) (args []string) {
 	args = make([]string, 0)
 
+	if inp == "" {
+		return []string{""}
+	}
+
 	started := false
 	t := ""
 	for _, ele := range strings.Split(inp, " ") {
@@ -32,7 +36,7 @@ func processInpArgs(inp string) (args []string) {
 				args = append(args, strings.Trim(t, `'`))
 				t = ""
 			}
-		} else {
+		} else if ele != "" {
 			args = append(args, ele)
 		}
 	}
