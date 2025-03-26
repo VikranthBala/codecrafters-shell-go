@@ -12,33 +12,23 @@ import (
 	"strings"
 )
 
-func processInpArgs(inp string) (args []string) {
-	args = make([]string, 0)
+func processInpArgs(inp string) (inpArgs []string) {
 
+	inpArgs = []string{}
 	if inp == "" {
 		return []string{""}
 	}
-
-	started := false
-	t := ""
-	for _, ele := range strings.Split(inp, " ") {
-		if !started && strings.HasPrefix(ele, `'`) {
-			if strings.HasSuffix(ele, `'`) {
-				args = append(args, strings.Trim(ele, `'`))
-				continue
-			}
-			started = !started
-			t += ele
-		} else if started {
-			t = t + " " + ele
-			if strings.HasSuffix(ele, `'`) {
-				started = !started
-				args = append(args, strings.Trim(t, `'`))
-				t = ""
-			}
-		} else if ele != "" {
-			args = append(args, ele)
+	for {
+		startIndex := strings.Index(inp, `'`)
+		if startIndex == -1 {
+			inpArgs = append(inpArgs, strings.Fields(inp)...)
+			break
 		}
+		inpArgs = append(inpArgs, strings.Fields(inp[:startIndex])...)
+		inp = inp[startIndex+1:]
+		endIndex := strings.Index(inp, `'`)
+		inpArgs = append(inpArgs, inp[:endIndex])
+		inp = inp[endIndex+1:]
 	}
 	return
 }
