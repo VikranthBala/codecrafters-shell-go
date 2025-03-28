@@ -100,7 +100,6 @@ func main() {
 			if binPath, err := exec.LookPath(inpArgs[0]); err != nil {
 				fmt.Println(inpArgs[0] + ": command not found")
 			} else {
-				log.Println("inpArgs: ", inpArgs)
 				cmd := exec.Command(inpArgs[0], inpArgs[1:]...)
 				cmd.Dir = filepath.Dir(binPath)
 				var outbuf, errbuf bytes.Buffer
