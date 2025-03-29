@@ -47,8 +47,10 @@ func parseInput(inp string) (inpArgs []string) {
 				current.WriteByte(' ')
 				continue
 			}
-			inpArgs = append(inpArgs, current.String())
-			current.Reset()
+			if current.Len() != 0 {
+				inpArgs = append(inpArgs, current.String())
+				current.Reset()
+			}
 		default:
 			current.WriteByte(char)
 		}
