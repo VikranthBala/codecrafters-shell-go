@@ -34,15 +34,19 @@ func NewOutputWriter(redirect, outfile string) (*OutputWriter, error) {
 	var file *os.File
 	var err error
 	if outfile != "" {
-		file, err = os.Create(outfile)
+		flag := os.O_TRUNC | os.O_CREATE | os.O_WRONLY
+		if redirect == "2>>" || redirect == "1>>" {
+			flag = os.O_APPEND | os.O_CREATE | os.O_WRONLY
+		}
+		file, err = os.OpenFile(outfile, flag, 0666)
 		if err != nil {
 			return ow, err
 		}
 	}
 	ow.file = file
-	if redirect == "2>" {
+	if redirect == "2>" || redirect == "2>>" {
 		ow.stderr = file
-	} else if redirect == "1>" || redirect == ">" {
+	} else if redirect == "1>" || redirect == "1>>" {
 		ow.stdout = file
 	}
 	return ow, nil
@@ -116,10 +120,16 @@ func parseInput(inp string) (inpCmdSplit CommandSplit) {
 
 	inpCmdSplit.inpArgs = inpArgs
 	for i, arg := range inpArgs {
-		if arg == ">" || arg == "1>" || arg == "2>" {
-			inpCmdSplit.descriptor = "1>"
-			if arg == "2>" {
-				inpCmdSplit.descriptor = arg
+		if arg == ">" || arg == "1>" || arg == "2>" || arg == ">>" || arg == "1>>" || arg == "2>>" {
+			switch arg {
+			case ">", "1>":
+				inpCmdSplit.descriptor = "1>"
+			case "2>":
+				inpCmdSplit.descriptor = "2>"
+			case ">>", "1>>":
+				inpCmdSplit.descriptor = "1>>"
+			case "2>>":
+				inpCmdSplit.descriptor = "2>>"
 			}
 			inpCmdSplit.outputFile = inpArgs[i+1]
 			inpCmdSplit.inpArgs = inpArgs[:i]
