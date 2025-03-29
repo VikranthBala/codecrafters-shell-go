@@ -24,8 +24,11 @@ func parseInput(inp string) (inpArgs []string) {
 	for i := range inp {
 		char := inp[i]
 		if escaped {
-			current.WriteByte(char)
 			escaped = false
+			if (inDQuotes || inQuotes) && !(char == '$' || char == '`' || char == '"' || char == '\\') {
+				current.WriteByte('\\')
+			}
+			current.WriteByte(char)
 			continue
 		}
 
