@@ -23,7 +23,7 @@ var BUILT_IN_COMMANDS = []string{
 	"cd",
 }
 
-var autoCompleteTurn = 1
+var autoCompleteTurn = 0
 var skipInput = false
 
 type CommandSplit struct {
@@ -58,21 +58,19 @@ func autoComplete(inp string) []string {
 		for _, file := range fileName {
 			matches = append(matches, filepath.Base(file))
 		}
-		// if len(fileName) != 0 {
-		// 	suffix, _ := strings.CutPrefix(filepath.Base(fileName[0]), inp)
-		// 	matches = append(matches, suffix)
-		// }
 	}
 	return matches
 }
 
 // Review this code again
-func GetInputFromTerm() (input string) {
+func GetInputFromTerm(preInp string) (input string) {
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
 		panic(err)
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
+	input += preInp
 
 	r := bufio.NewReader(os.Stdin)
 loop:
@@ -103,12 +101,14 @@ loop:
 				input = suffix + " "
 				fmt.Fprintf(os.Stdout, "%s", suffix+" ")
 			} else {
-				if autoCompleteTurn%2 == 0 {
-					autoCompleteTurn = 0
+				// HACK HACK HACK: This auto complete handling is broken fix this
+				if autoCompleteTurn%2 == 1 {
 					fmt.Fprintf(os.Stdout, "\r\n%s", strings.Join(suggestions, "  "))
 					skipInput = true
+					autoCompleteTurn = 0 // Reset the counter after displaying suggestions
 					break loop
 				}
+				fmt.Fprintf(os.Stdout, "\a")
 				autoCompleteTurn++
 			}
 		default:
@@ -242,11 +242,11 @@ func main() {
 		// 	log.Fatal(err)
 		// }
 
-		command := GetInputFromTerm()
-		if skipInput {
+		command := GetInputFromTerm("")
+		for skipInput {
 			skipInput = false
 			fmt.Fprint(os.Stdout, "\r\n$ "+command)
-			continue
+			command = GetInputFromTerm(command)
 		}
 
 		command = strings.TrimRight(command, "\n")
