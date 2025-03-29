@@ -11,7 +11,17 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"golang.org/x/term"
 )
+
+var BUILT_IN_COMMANDS = []string{
+	"exit",
+	"echo",
+	"type",
+	"pwd",
+	"cd",
+}
 
 type CommandSplit struct {
 	inpArgs    []string
@@ -23,6 +33,56 @@ type OutputWriter struct {
 	stdout io.Writer
 	stderr io.Writer
 	file   *os.File
+}
+
+func autoComplete(inp string) string {
+	for _, cmd := range BUILT_IN_COMMANDS {
+		if suffix, ok := strings.CutPrefix(cmd, inp); ok {
+			return suffix
+		}
+	}
+	return ""
+}
+
+func GetInputFromTerm() (input string) {
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		panic(err)
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
+	r := bufio.NewReader(os.Stdin)
+loop:
+	for {
+		inp, _, err := r.ReadRune()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		switch inp {
+		case '\x03':
+			os.Exit(0)
+		case '\r', '\n':
+			fmt.Fprint(os.Stdout, "\r\n")
+			break loop
+		case '\x7F':
+			if length := len(input); length > 0 {
+				input = input[:length-1]
+				fmt.Fprint(os.Stdout, "\b \b")
+			}
+		case '\t':
+			suffix := autoComplete(input)
+			if suffix != "" {
+				input += suffix + " "
+				fmt.Fprintf(os.Stdout, "%s", suffix+" ")
+			}
+		default:
+			input += string(inp)
+			fmt.Fprint(os.Stdout, string(inp))
+		}
+	}
+	return input
 }
 
 func NewOutputWriter(redirect, outfile string) (*OutputWriter, error) {
@@ -142,11 +202,14 @@ func parseInput(inp string) (inpCmdSplit CommandSplit) {
 func main() {
 
 	for {
-		fmt.Fprint(os.Stdout, "$ ")
-		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-		}
+		fmt.Fprint(os.Stdout, "\r$")
+		// command, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+
+		command := GetInputFromTerm()
+
 		command = strings.TrimRight(command, "\n")
 
 		parsedInput := parseInput(command)
@@ -191,7 +254,7 @@ func main() {
 				pathDirs := strings.Split(os.Getenv("PATH"), ":")
 				var found bool
 				for _, dir := range pathDirs {
-					if _, err = os.Stat(dir + "/" + cmd); err == nil {
+					if _, err := os.Stat(dir + "/" + cmd); err == nil {
 						found = true
 						outputMessage = fmt.Sprintln(cmd + " is " + dir + "/" + cmd)
 						break
