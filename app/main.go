@@ -115,7 +115,7 @@ loop:
 				fmt.Fprintf(os.Stdout, "\a")
 			} else if len(suggestions) == 1 {
 				suffix, _ := strings.CutPrefix(suggestions[0], input)
-				input = suffix + " "
+				input += suffix + " "
 				fmt.Fprintf(os.Stdout, "%s", suffix+" ")
 			} else {
 				// HACK HACK HACK: This auto complete handling is broken fix this
