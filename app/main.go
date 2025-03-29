@@ -56,11 +56,11 @@ func autoComplete(inp string) []string {
 		if err != nil {
 			log.Fatal(err)
 		}
-		sort.Strings(fileName)
 		for _, file := range fileName {
 			matches = append(matches, filepath.Base(file))
 		}
 	}
+	sort.Strings(matches)
 	return matches
 }
 
