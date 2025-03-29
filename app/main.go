@@ -58,6 +58,44 @@ func removeDuplicatesAndSort(slice []string) []string {
 	return result
 }
 
+func getLongestCommonSubstring(suggestions []string) string {
+	longestSubString := suggestions[0]
+	lenLongestSubString := len(suggestions[0])
+	for i := 1; i < len(suggestions); i++ {
+		if lenLongestSubString > len(suggestions[i]) {
+			lenSubStr := len(suggestions[i])
+			subStr := suggestions[i]
+		inner1:
+			for lenSubStr > 0 {
+				if strings.HasPrefix(longestSubString, subStr) {
+					lenLongestSubString = lenSubStr
+					longestSubString = subStr
+					break inner1
+				}
+				subStr = subStr[:lenSubStr]
+			}
+		} else if lenLongestSubString < len(suggestions[i]) {
+		inner2:
+			for lenLongestSubString > 0 {
+				if strings.HasPrefix(suggestions[i], longestSubString) {
+					break inner2
+				}
+				longestSubString = longestSubString[:lenLongestSubString]
+				lenLongestSubString--
+			}
+		} else {
+		inner3:
+			for j, longSub := range longestSubString {
+				if byte(longSub) != suggestions[i][j] {
+					longestSubString = longestSubString[:j]
+					break inner3
+				}
+			}
+		}
+	}
+	return longestSubString
+}
+
 func autoComplete(inp string) []string {
 
 	matches := []string{}
@@ -125,8 +163,15 @@ loop:
 					autoCompleteTurn = 0 // Reset the counter after displaying suggestions
 					break loop
 				}
-				fmt.Fprintf(os.Stdout, "\a")
-				autoCompleteTurn++
+
+				if commonCmdStr := getLongestCommonSubstring(suggestions); commonCmdStr != "" {
+					suffix, _ := strings.CutPrefix(commonCmdStr, input)
+					input += suffix
+					fmt.Fprintf(os.Stdout, "%s", suffix)
+				} else {
+					fmt.Fprintf(os.Stdout, "\a")
+					autoCompleteTurn++
+				}
 			}
 		default:
 			input += string(inp)
