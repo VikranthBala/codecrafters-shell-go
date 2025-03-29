@@ -164,7 +164,7 @@ loop:
 					break loop
 				}
 
-				if commonCmdStr := getLongestCommonSubstring(suggestions); commonCmdStr != "" {
+				if commonCmdStr := getLongestCommonSubstring(suggestions); commonCmdStr != input {
 					suffix, _ := strings.CutPrefix(commonCmdStr, input)
 					input += suffix
 					fmt.Fprintf(os.Stdout, "%s", suffix)
