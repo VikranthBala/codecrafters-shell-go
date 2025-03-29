@@ -42,6 +42,22 @@ type OutputWriter struct {
 // Can probably use this as a way to not look up in path again, but not implemented now
 // var autoFilledCustomExecutablePath = ""
 
+// removeDuplicatesAndSort removes duplicates from a slice and returns a sorted string slice
+func removeDuplicatesAndSort(slice []string) []string {
+	unique := make(map[string]struct{}) // Use map to track unique values
+	var result []string
+
+	for _, s := range slice {
+		if _, exists := unique[s]; !exists {
+			unique[s] = struct{}{}
+			result = append(result, s)
+		}
+	}
+
+	sort.Strings(result) // Sort the slice alphabetically
+	return result
+}
+
 func autoComplete(inp string) []string {
 
 	matches := []string{}
@@ -60,8 +76,7 @@ func autoComplete(inp string) []string {
 			matches = append(matches, filepath.Base(file))
 		}
 	}
-	sort.Strings(matches)
-	return matches
+	return removeDuplicatesAndSort(matches)
 }
 
 // Review this code again
