@@ -44,6 +44,7 @@ func autoComplete(inp string) string {
 	return ""
 }
 
+// Review this code again
 func GetInputFromTerm() (input string) {
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -76,7 +77,10 @@ loop:
 			if suffix != "" {
 				input += suffix + " "
 				fmt.Fprintf(os.Stdout, "%s", suffix+" ")
+			} else {
+				fmt.Fprintf(os.Stdout, "\a")
 			}
+
 		default:
 			input += string(inp)
 			fmt.Fprint(os.Stdout, string(inp))
