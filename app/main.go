@@ -35,9 +35,23 @@ type OutputWriter struct {
 	file   *os.File
 }
 
+// Can probably use this as a way to not look up in path again, but not implemented now
+// var autoFilledCustomExecutablePath = ""
+
 func autoComplete(inp string) string {
 	for _, cmd := range BUILT_IN_COMMANDS {
 		if suffix, ok := strings.CutPrefix(cmd, inp); ok {
+			return suffix
+		}
+	}
+
+	for _, dir := range strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)) {
+		fileName, err := filepath.Glob(dir + "/" + inp + "*")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(fileName) != 0 {
+			suffix, _ := strings.CutPrefix(filepath.Base(fileName[0]), inp)
 			return suffix
 		}
 	}
