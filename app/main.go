@@ -245,7 +245,7 @@ func main() {
 		command := GetInputFromTerm()
 		if skipInput {
 			skipInput = false
-			fmt.Fprint(os.Stdout, "\r\n")
+			fmt.Fprint(os.Stdout, "\r\n$ "+command)
 			continue
 		}
 
