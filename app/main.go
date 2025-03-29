@@ -202,7 +202,7 @@ func parseInput(inp string) (inpCmdSplit CommandSplit) {
 func main() {
 
 	for {
-		fmt.Fprint(os.Stdout, "\r$")
+		fmt.Fprint(os.Stdout, "\r$ ")
 		// command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		// if err != nil {
 		// 	log.Fatal(err)
