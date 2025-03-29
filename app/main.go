@@ -25,7 +25,7 @@ func parseInput(inp string) (inpArgs []string) {
 		char := inp[i]
 		if escaped {
 			escaped = false
-			if (inDQuotes || inQuotes) && !(char == '$' || char == '`' || char == '"' || char == '\\') {
+			if inDQuotes && !(char == '$' || char == '`' || char == '"' || char == '\\') {
 				current.WriteByte('\\')
 			}
 			current.WriteByte(char)
@@ -34,7 +34,10 @@ func parseInput(inp string) (inpArgs []string) {
 
 		switch char {
 		case '\\':
-			escaped = true
+			escaped = !inQuotes
+			if !escaped {
+				current.WriteByte('\\')
+			}
 		case '"':
 			inDQuotes = !inQuotes && !inDQuotes
 			if inQuotes {
