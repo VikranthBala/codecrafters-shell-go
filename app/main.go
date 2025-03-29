@@ -12,24 +12,49 @@ import (
 	"strings"
 )
 
-func processInpArgs(inp string) (inpArgs []string) {
-
+func parseInput(inp string) (inpArgs []string) {
 	inpArgs = []string{}
 	if inp == "" {
 		return []string{""}
 	}
-	for {
-		inp = strings.ReplaceAll(inp, `''`, "")
-		startIndex := strings.Index(inp, `'`)
-		if startIndex == -1 {
-			inpArgs = append(inpArgs, strings.Fields(inp)...)
-			break
+
+	var inDQuotes, inQuotes, escaped bool = false, false, false
+	var current strings.Builder
+
+	for i := range inp {
+		char := inp[i]
+		if escaped {
+			current.WriteByte(char)
+			escaped = false
+			continue
 		}
-		inpArgs = append(inpArgs, strings.Fields(inp[:startIndex])...)
-		inp = inp[startIndex+1:]
-		endIndex := strings.Index(inp, `'`)
-		inpArgs = append(inpArgs, inp[:endIndex])
-		inp = inp[endIndex+1:]
+
+		switch char {
+		case '\\':
+			escaped = true
+		case '"':
+			inDQuotes = !inQuotes && !inDQuotes
+			if inQuotes {
+				current.WriteByte('"')
+			}
+		case '\'':
+			inQuotes = !inDQuotes && !inQuotes
+			if inDQuotes {
+				current.WriteByte('\'')
+			}
+		case ' ':
+			if inQuotes || inDQuotes {
+				current.WriteByte(' ')
+				continue
+			}
+			inpArgs = append(inpArgs, current.String())
+			current.Reset()
+		default:
+			current.WriteByte(char)
+		}
+	}
+	if current.Len() > 0 {
+		inpArgs = append(inpArgs, current.String())
 	}
 	return
 }
@@ -44,7 +69,7 @@ func main() {
 		}
 		command = strings.TrimRight(command, "\n")
 
-		inpArgs := processInpArgs(command)
+		inpArgs := parseInput(command)
 
 		switch inpArgs[0] {
 		case "exit":
