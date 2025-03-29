@@ -23,6 +23,9 @@ var BUILT_IN_COMMANDS = []string{
 	"cd",
 }
 
+var autoCompleteTurn = 1
+var skipInput = false
+
 type CommandSplit struct {
 	inpArgs    []string
 	descriptor string
@@ -38,10 +41,12 @@ type OutputWriter struct {
 // Can probably use this as a way to not look up in path again, but not implemented now
 // var autoFilledCustomExecutablePath = ""
 
-func autoComplete(inp string) string {
+func autoComplete(inp string) []string {
+
+	matches := []string{}
 	for _, cmd := range BUILT_IN_COMMANDS {
-		if suffix, ok := strings.CutPrefix(cmd, inp); ok {
-			return suffix
+		if ok := strings.HasPrefix(cmd, inp); ok {
+			matches = append(matches, cmd)
 		}
 	}
 
@@ -50,12 +55,15 @@ func autoComplete(inp string) string {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if len(fileName) != 0 {
-			suffix, _ := strings.CutPrefix(filepath.Base(fileName[0]), inp)
-			return suffix
+		for _, file := range fileName {
+			matches = append(matches, filepath.Base(file))
 		}
+		// if len(fileName) != 0 {
+		// 	suffix, _ := strings.CutPrefix(filepath.Base(fileName[0]), inp)
+		// 	matches = append(matches, suffix)
+		// }
 	}
-	return ""
+	return matches
 }
 
 // Review this code again
@@ -87,14 +95,22 @@ loop:
 				fmt.Fprint(os.Stdout, "\b \b")
 			}
 		case '\t':
-			suffix := autoComplete(input)
-			if suffix != "" {
-				input += suffix + " "
+			suggestions := autoComplete(input)
+			if len(suggestions) == 0 {
+				fmt.Fprintf(os.Stdout, "\a")
+			} else if len(suggestions) == 1 {
+				suffix, _ := strings.CutPrefix(suggestions[0], input)
+				input = suffix + " "
 				fmt.Fprintf(os.Stdout, "%s", suffix+" ")
 			} else {
-				fmt.Fprintf(os.Stdout, "\a")
+				if autoCompleteTurn%2 == 0 {
+					autoCompleteTurn = 0
+					fmt.Fprintf(os.Stdout, "\r\n%s", strings.Join(suggestions, "  "))
+					skipInput = true
+					break loop
+				}
+				autoCompleteTurn++
 			}
-
 		default:
 			input += string(inp)
 			fmt.Fprint(os.Stdout, string(inp))
@@ -227,6 +243,11 @@ func main() {
 		// }
 
 		command := GetInputFromTerm()
+		if skipInput {
+			skipInput = false
+			fmt.Fprint(os.Stdout, "\r\n")
+			continue
+		}
 
 		command = strings.TrimRight(command, "\n")
 
