@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -12,12 +13,60 @@ import (
 	"strings"
 )
 
-func parseInput(inp string) (inpArgs []string) {
-	inpArgs = []string{}
-	if inp == "" {
-		return []string{""}
+type CommandSplit struct {
+	inpArgs    []string
+	descriptor string
+	outputFile string
+}
+
+type OutputWriter struct {
+	stdout io.Writer
+	stderr io.Writer
+	file   *os.File
+}
+
+func NewOutputWriter(redirect, outfile string) (*OutputWriter, error) {
+	ow := &OutputWriter{
+		stdout: os.Stdout,
+		stderr: os.Stderr,
 	}
 
+	var file *os.File
+	var err error
+	if outfile != "" {
+		file, err = os.Create(outfile)
+		if err != nil {
+			return ow, err
+		}
+	}
+	ow.file = file
+	if redirect == "2>" {
+		ow.stderr = file
+	} else if redirect == "1>" || redirect == ">" {
+		ow.stdout = file
+	}
+	return ow, nil
+}
+
+// WriteOutput writes output to the correct destination
+func (ow *OutputWriter) WriteOutput(outMsg, errMsg string) {
+	fmt.Fprint(ow.stderr, errMsg)
+	fmt.Fprint(ow.stdout, outMsg)
+}
+
+func (ow *OutputWriter) Close() {
+	if ow.file != nil {
+		ow.file.Close()
+	}
+}
+
+func parseInput(inp string) (inpCmdSplit CommandSplit) {
+	inpCmdSplit = CommandSplit{inpArgs: []string{""}}
+
+	inpArgs := []string{}
+	if inp == "" {
+		return
+	}
 	var inDQuotes, inQuotes, escaped bool = false, false, false
 	var current strings.Builder
 
@@ -64,6 +113,19 @@ func parseInput(inp string) (inpArgs []string) {
 	if current.Len() > 0 {
 		inpArgs = append(inpArgs, current.String())
 	}
+
+	inpCmdSplit.inpArgs = inpArgs
+	for i, arg := range inpArgs {
+		if arg == ">" || arg == "1>" || arg == "2>" {
+			inpCmdSplit.descriptor = "1>"
+			if arg == "2>" {
+				inpCmdSplit.descriptor = arg
+			}
+			inpCmdSplit.outputFile = inpArgs[i+1]
+			inpCmdSplit.inpArgs = inpArgs[:i]
+			break
+		}
+	}
 	return
 }
 
@@ -77,8 +139,10 @@ func main() {
 		}
 		command = strings.TrimRight(command, "\n")
 
-		inpArgs := parseInput(command)
+		parsedInput := parseInput(command)
+		inpArgs := parsedInput.inpArgs
 
+		var outputMessage, errorMessage string
 		switch inpArgs[0] {
 		case "exit":
 			stsCode, err := strconv.Atoi(inpArgs[1])
@@ -87,13 +151,13 @@ func main() {
 			}
 			os.Exit(stsCode)
 		case "echo":
-			fmt.Println(strings.Join(inpArgs[1:], " "))
+			outputMessage = fmt.Sprintln(strings.Join(inpArgs[1:], " "))
 		case "pwd":
 			wd, err := os.Getwd()
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println(wd)
+			outputMessage = fmt.Sprintln(wd)
 		case "cd":
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
@@ -105,13 +169,13 @@ func main() {
 				err = os.Chdir(inpArgs[1])
 			}
 			if err != nil {
-				fmt.Println("cd: " + inpArgs[1] + ": No such file or directory")
+				errorMessage = fmt.Sprintln("cd: " + inpArgs[1] + ": No such file or directory")
 			}
 		case "type":
 			cmd := inpArgs[1]
 			builtInCommands := map[string]bool{"exit": true, "echo": true, "type": true, "pwd": true}
 			if builtInCommands[cmd] {
-				fmt.Println(cmd + " is a shell builtin")
+				outputMessage = fmt.Sprintln(cmd + " is a shell builtin")
 			} else {
 				// This logic can be replaced by using os/exec#LookUpPath method
 				pathDirs := strings.Split(os.Getenv("PATH"), ":")
@@ -119,12 +183,12 @@ func main() {
 				for _, dir := range pathDirs {
 					if _, err = os.Stat(dir + "/" + cmd); err == nil {
 						found = true
-						fmt.Println(cmd + " is " + dir + "/" + cmd)
+						outputMessage = fmt.Sprintln(cmd + " is " + dir + "/" + cmd)
 						break
 					}
 				}
 				if !found {
-					fmt.Println(cmd + ": not found")
+					errorMessage = fmt.Sprintln(cmd + ": not found")
 				}
 			}
 		case "":
@@ -140,11 +204,17 @@ func main() {
 				cmd.Stderr = &errbuf
 				err := cmd.Run()
 				if err != nil {
-					log.Println("stderr: ", errbuf.String())
-					log.Fatal(err)
+					errorMessage = errbuf.String()
 				}
-				fmt.Printf("%s", outbuf.String())
+				outputMessage = outbuf.String()
 			}
 		}
+
+		writer, err := NewOutputWriter(parsedInput.descriptor, parsedInput.outputFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer writer.Close()
+		writer.WriteOutput(outputMessage, errorMessage)
 	}
 }
